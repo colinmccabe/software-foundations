@@ -1,0 +1,10 @@
+*.ml
+*.mli
+*.ml
+*.js
+*.html
+*.gif
+*.jpg
+*.css
+*.map
+.depend
