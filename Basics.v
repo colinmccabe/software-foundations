@@ -235,19 +235,22 @@ Proof. reflexivity.  Qed.
     its inputs are [false]. *)
 
 Definition nandb (b1:bool) (b2:bool) : bool :=
-  (* FILL IN HERE *) admit.
+  match b1, b2 with
+    | true, true => false
+    | _, _ => true
+  end.
 
 (** Remove "[Admitted.]" and fill in each proof with 
     "[Proof. reflexivity. Qed.]" *)
 
 Example test_nandb1:               (nandb true false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_nandb2:               (nandb false false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_nandb3:               (nandb false true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_nandb4:               (nandb true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (andb3)  *)
@@ -256,16 +259,16 @@ Example test_nandb4:               (nandb true true) = false.
     otherwise. *)
 
 Definition andb3 (b1:bool) (b2:bool) (b3:bool) : bool :=
-  (* FILL IN HERE *) admit.
+  (andb b1 (andb b2 b3)).
 
 Example test_andb31:                 (andb3 true true true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_andb32:                 (andb3 false true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_andb33:                 (andb3 true false true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_andb34:                 (andb3 true true false) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (* ###################################################################### *)
@@ -490,12 +493,15 @@ Fixpoint exp (base power : nat) : nat :=
     Translate this into Coq. *)
 
 Fixpoint factorial (n:nat) : nat := 
-(* FILL IN HERE *) admit.
+  match n with
+    | O => 1
+    | S n' => mult n (factorial n')
+  end.
 
 Example test_factorial1:          (factorial 3) = 6.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_factorial2:          (factorial 5) = (mult 10 12).
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** [] *)
 
@@ -571,14 +577,14 @@ Proof. reflexivity.  Qed.
     this one, define it in terms of a previously defined function. *)
 
 Definition blt_nat (n m : nat) : bool :=
-  (* FILL IN HERE *) admit.
+  (andb (ble_nat n m) (negb (beq_nat n m))).
 
 Example test_blt_nat1:             (blt_nat 2 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_blt_nat2:             (blt_nat 2 4) = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_blt_nat3:             (blt_nat 4 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** [] *)
 
@@ -720,7 +726,14 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros o.
+  intros H.
+  rewrite -> H.
+  intros H'.
+  rewrite -> H'.
+  reflexivity. Qed.
+
 (** [] *)
 
 (** As we've seen in earlier examples, the [Admitted] command
@@ -750,7 +763,11 @@ Theorem mult_S_1 : forall n m : nat,
   m = S n -> 
   m * (1 + n) = m * m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros H.
+  rewrite -> H.
+  reflexivity. Qed.
+
 (** [] *)
 
 
@@ -835,7 +852,10 @@ Proof.
 Theorem zero_nbeq_plus_1 : forall n : nat,
   beq_nat 0 (n + 1) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  destruct n.
+  reflexivity.
+  reflexivity. Qed.
 
 (** [] *)
 
@@ -851,13 +871,35 @@ Theorem identity_fn_applied_twice :
   (forall (x : bool), f x = x) ->
   forall (b : bool), f (f b) = b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros f.
+  intros H.
+  destruct b.
+  rewrite H.
+  rewrite H.
+  reflexivity.
+  rewrite H.
+  rewrite H.
+  reflexivity. Qed.
 
 (** Now state and prove a theorem [negation_fn_applied_twice] similar
     to the previous one but where the second hypothesis says that the
     function [f] has the property that [f x = negb x].*)
 
-(* FILL IN HERE *)
+Theorem negation_fn_applied_twice :
+  forall (f : bool -> bool),
+  (forall (x : bool), f x = negb x) ->
+  forall (b : bool), f (f b) = b.
+Proof.
+  intros f.
+  intros H.
+  destruct b.
+  rewrite -> H.
+  rewrite -> H.
+  reflexivity.
+  rewrite -> H.
+  rewrite -> H.
+  reflexivity. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (andb_eq_orb)  *)
@@ -909,7 +951,32 @@ Proof.
         then incrementing. 
 *)
 
-(* FILL IN HERE *)
+Inductive bin : Type :=
+  | B0 : bin
+  | B2 : bin -> bin
+  | B2p1 : bin -> bin.
+
+Definition incr (n:bin) : bin :=
+  match n with
+  | B0 => B2p1 B0
+  | B2 n' => B2p1 n'
+  | B2p1 n' =>
+    match n' with
+    | B0 => B2 n'
+    | B2 n'' => B2 (B2p1 n'')
+    | B2p1 n'' => B2 (B2 n'')
+    end
+  end.
+
+Example test_bin_incr1: incr (B2 (B2 (B2p1 B0))) = B2p1 (B2 (B2p1 B0)).
+Proof. reflexivity. Qed.
+Example test_bin_incr2: incr (B2p1 (B2p1 (B2p1 B0))) = B2 (B2 (B2 (B2p1 B0))).
+Proof. Admitted.
+Example test_bin_incr3: incr (B2p1 (B2 (B2 (B2p1 B0)))) = B2 (B2p1 (B2 (B2p1 B0))).
+Proof. Admitted.
+Example test_bin_incr4: incr (B2p1 (B2p1 (B2 (B2p1 B0)))) = B2 (B2 (B2p1 (B2p1 B0))).
+Proof. Admitted.
+
 (** [] *)
 
 (* ###################################################################### *)

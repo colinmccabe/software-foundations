@@ -7,4 +7,6 @@
 *.jpg
 *.css
 *.map
+*.vo
+*.glob
 .depend
