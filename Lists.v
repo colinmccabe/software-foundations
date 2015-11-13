@@ -453,7 +453,20 @@ Example test_subset2:              subset [1;2;2] [2;1;4;1] = false.
     you haven't learned yet.  Feel free to ask for help if you get
     stuck! *)
 
-(* FILL IN HERE *)
+Theorem bag_sum_increments_count : forall v:nat, forall s:bag,
+  (count v (add v s)) = S (count v s).
+Proof.
+  intros v s.
+  induction s as [| n s'].
+  Case "s = []".
+    assert (H1: add v [] = [v]).
+      reflexivity.
+    rewrite -> H1.
+    assert (H2: count v [] = 0).
+      reflexivity.
+    rewrite -> H2.
+  Admitted.
+
 (** [] *)
 
 (* ###################################################### *)
@@ -756,7 +769,7 @@ Proof.
     involving [foo].  For example, try uncommenting the following to
     see a list of theorems that we have proved about [rev]: *)
 
-(*  SearchAbout rev. *)
+SearchAbout rev.
 
 (** Keep [SearchAbout] in mind as you do the following exercises and
     throughout the rest of the course; it can save you a lot of time! *)
@@ -774,13 +787,26 @@ Proof.
 Theorem app_nil_end : forall l : natlist, 
   l ++ [] = l.   
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros l.
+  induction l as [| n l'].
+  Case "l = nil".
+    reflexivity.
+  Case "l = cons'".
+    simpl.
+    rewrite -> IHl'.
+    reflexivity.
+  Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l.
+  induction l as [| n l'].
+  Case "l = nil".
+    reflexivity.
+  Case "l = cons".
+    simpl.
+  Admitted.
 
 (** There is a short solution to the next exercise.  If you find
     yourself getting tangled up, step back and try to look for a
@@ -789,13 +815,21 @@ Proof.
 Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite -> app_assoc.
+  rewrite -> app_assoc.
+  reflexivity.
+  Qed.
 
 Theorem snoc_append : forall (l:natlist) (n:nat),
   snoc l n = l ++ [n].
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros.
+  induction l as [| n' l'].
+  Case "l = nil".
+    reflexivity.
+  Case "l = cons".
+  Admitted.
 
 Theorem distr_rev : forall l1 l2 : natlist,
   rev (l1 ++ l2) = (rev l2) ++ (rev l1).

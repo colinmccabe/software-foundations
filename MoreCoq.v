@@ -77,7 +77,11 @@ Theorem silly_ex :
      evenb 3 = true ->
      oddb 4 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply H.
+  rewrite -> H0.
+  reflexivity. Qed.
+
 (** [] *)
 
 (** To use the [apply] tactic, the (conclusion of the) fact
@@ -116,7 +120,12 @@ Theorem rev_exercise1 : forall (l l' : list nat),
      l = rev l' ->
      l' = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite -> H.
+  symmetry.
+  apply rev_involutive.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (apply_rewrite)  *)
@@ -183,7 +192,12 @@ Example trans_eq_exercise : forall (n m o p : nat),
      (n + p) = m ->
      (n + p) = (minustwo o). 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply trans_eq with (m:nat).
+  apply H0.
+  apply H.
+  Qed.
+
 (** [] *)
 
 
@@ -269,7 +283,13 @@ Example sillyex1 : forall (X : Type) (x y z : X) (l j : list X),
      y :: l = x :: j ->
      x = y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+  inversion H0.
+  rewrite -> H2.
+  reflexivity.
+  Qed.
+
 (** [] *)
 
 Theorem silly6 : forall (n : nat),
@@ -290,7 +310,10 @@ Example sillyex2 : forall (X : Type) (x y z : X) (l j : list X),
      y :: l = z :: j ->
      x = z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X x y z l j H1 H2.
+  inversion H1.
+  Qed.
+
 (** [] *)
 
 (** While the injectivity of constructors allows us to reason
@@ -381,9 +404,9 @@ Theorem plus_n_n_injective : forall n m,
      n + n = m + m ->
      n = m.
 Proof.
-  intros n. induction n as [| n'].
-    (* Hint: use the plus_n_Sm lemma *)
-    (* FILL IN HERE *) Admitted.
+  intros n m eq.
+  Admitted.
+
 (** [] *)
 
 (* ###################################################### *)
@@ -529,7 +552,22 @@ Proof.
 Theorem beq_nat_true : forall n m,
     beq_nat n m = true -> n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [| n'].
+  Case "n = O". intros m eq. destruct m as [| m'].
+    SCase "m = O". reflexivity.
+    SCase "m = S m'". inversion eq.
+  Case "n = S n'".
+    intros m eq.
+    destruct m as [| m'].
+    SCase "m = O".
+      inversion eq.
+    SCase "m = S m'".
+      apply f_equal.
+      apply IHn'.
+      inversion eq.
+      reflexivity.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (beq_nat_true_informal)  *)
