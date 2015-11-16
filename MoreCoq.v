@@ -80,7 +80,8 @@ Proof.
   intros.
   apply H.
   rewrite -> H0.
-  reflexivity. Qed.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -124,7 +125,7 @@ Proof.
   rewrite -> H.
   symmetry.
   apply rev_involutive.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -196,7 +197,7 @@ Proof.
   apply trans_eq with (m:nat).
   apply H0.
   apply H.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -288,7 +289,7 @@ Proof.
   inversion H0.
   rewrite -> H2.
   reflexivity.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -312,7 +313,7 @@ Example sillyex2 : forall (X : Type) (x y z : X) (l j : list X),
 Proof.
   intros X x y z l j H1 H2.
   inversion H1.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -404,8 +405,30 @@ Theorem plus_n_n_injective : forall n m,
      n + n = m + m ->
      n = m.
 Proof.
-  intros n m eq.
-  Admitted.
+  intros n.
+  induction n as [| n'].
+  Case "n = O".
+    intros m eq.
+    induction m as [| m'].
+    SCase "m = O".
+      reflexivity.
+    SCase "m = S m'".
+      inversion eq.
+  Case "n = S n'".
+    intros m eq.
+    induction m as [| m].
+    SCase "m = O".
+      inversion eq.
+    SCase "m = S m'".
+      apply f_equal.
+      rewrite <- plus_n_Sm in eq.
+      simpl in eq.
+      rewrite <- plus_n_Sm in eq.
+      simpl in eq.
+      inversion eq.
+      apply IHn' in H0.
+      apply H0.
+Qed.
 
 (** [] *)
 
@@ -566,7 +589,7 @@ Proof.
       apply IHn'.
       inversion eq.
       reflexivity.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -740,7 +763,20 @@ Theorem index_after_last: forall (n : nat) (X : Type) (l : list X),
      length l = n ->
      index n l = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n X l.
+  generalize dependent n.
+  induction l as [| h l'].
+  Case "l = nil".
+    intros n eq.
+    reflexivity.
+  Case "l = cons".
+    intros n eq.
+    rewrite <- eq.
+    simpl.
+    apply IHl'.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (index_after_last_informal)  *)
@@ -846,7 +882,13 @@ Proof.
 Theorem override_shadow : forall (X:Type) x1 x2 k1 k2 (f : nat->X),
   (override (override f k1 x2) k1 x1) k2 = (override f k1 x1) k2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold override.
+  destruct (beq_nat k1 k2).
+  reflexivity.
+  reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (combine_split)  *)
@@ -925,7 +967,35 @@ Theorem bool_fn_applied_thrice :
   forall (f : bool -> bool) (b : bool), 
   f (f (f b)) = f b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct b.
+  Case "b = true".
+    destruct (f true) eqn:H0.
+    SCase "f true = true".
+      rewrite -> H0. rewrite -> H0.
+      reflexivity.
+    SCase "f true = false".
+      destruct (f false) eqn:H1.
+      SSCase "f false = true".
+        rewrite -> H0. reflexivity.
+      SSCase "f false = false".
+        rewrite -> H1. reflexivity.
+  Case "b = false".
+    destruct (f false) eqn:H0.
+    SCase "f false = true".
+      destruct (f true) eqn:H1.
+      SSCase "f true = true".
+        rewrite -> H1. reflexivity.
+      SSCase "f true = false".
+        rewrite -> H0. reflexivity.
+    SCase "f false = false".
+      destruct (f false) eqn:H1.
+      SSCase "f false = true".
+        inversion H0.
+      SSCase "f false = false".
+        rewrite -> H1. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (override_same)  *)
@@ -933,7 +1003,18 @@ Theorem override_same : forall (X:Type) x1 k1 k2 (f : nat->X),
   f k1 = x1 -> 
   (override f k1 x1) k2 = f k2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold override.
+  destruct (beq_nat k1 k2) eqn:Heq.
+  Case "beq_nat k1 k2 = true".
+    rewrite <- H.
+    apply beq_nat_true in Heq.
+    rewrite -> Heq.
+    reflexivity.
+  Case "beq_nat k1 k2 = false".
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (* ################################################################## *)
@@ -1018,7 +1099,23 @@ Proof.
 Theorem beq_nat_sym : forall (n m : nat),
   beq_nat n m = beq_nat m n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n as [| n'].
+  Case "n = O".
+    intros m.
+    induction m as [| m'].
+    SCase "m = O".
+      reflexivity.
+    SCase "m = S m'".
+      reflexivity.
+  Case "n = S n'".
+    induction m as [| m'].
+    SCase "m = O".
+      reflexivity.
+    SCase "m = S m'".
+      apply IHn'.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (beq_nat_sym_informal)  *)
@@ -1069,7 +1166,29 @@ Theorem override_permute : forall (X:Type) x1 x2 k1 k2 k3 (f : nat->X),
   beq_nat k2 k1 = false ->
   (override (override f k2 x2) k1 x1) k3 = (override (override f k1 x1) k2 x2) k3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold override.
+  destruct (beq_nat k1 k3) eqn:H0.
+  Case "k1 = k3".
+    destruct (beq_nat k2 k3) eqn:H1.
+    SCase "k2 = k3".
+      apply beq_nat_true in H0.
+      apply beq_nat_true in H1.
+      rewrite -> H0 in H.
+      rewrite -> H1 in H.
+      rewrite <- beq_nat_refl in H.
+      inversion H.
+    SCase "k2 <> k3".
+      reflexivity.
+  Case "k1 <> k3".
+    destruct (beq_nat k2 k3).
+    SCase "k2 = k3".
+      reflexivity.
+    SCase "k2 <> k3".
+      apply f_equal.
+      reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (filter_exercise)  *)

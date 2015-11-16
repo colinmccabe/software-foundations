@@ -9,4 +9,6 @@
 *.map
 *.vo
 *.glob
+\#*
+.\#*
 .depend
