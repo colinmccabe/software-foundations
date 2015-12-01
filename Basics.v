@@ -726,13 +726,11 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  intros n m.
-  intros o.
-  intros H.
-  rewrite -> H.
-  intros H'.
-  rewrite -> H'.
-  reflexivity. Qed.
+  intros n m o H0 H1.
+  rewrite -> H0.
+  rewrite -> H1.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -763,10 +761,10 @@ Theorem mult_S_1 : forall n m : nat,
   m = S n -> 
   m * (1 + n) = m * m.
 Proof.
-  intros n m.
-  intros H.
+  intros n m H.
   rewrite -> H.
-  reflexivity. Qed.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -855,7 +853,8 @@ Proof.
   intros n.
   destruct n.
   reflexivity.
-  reflexivity. Qed.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -871,15 +870,11 @@ Theorem identity_fn_applied_twice :
   (forall (x : bool), f x = x) ->
   forall (b : bool), f (f b) = b.
 Proof.
-  intros f.
-  intros H.
+  intros f H.
   destruct b.
-  rewrite H.
-  rewrite H.
-  reflexivity.
-  rewrite H.
-  rewrite H.
-  reflexivity. Qed.
+  rewrite H. rewrite H. reflexivity.
+  rewrite H. rewrite H. reflexivity.
+Qed.
 
 (** Now state and prove a theorem [negation_fn_applied_twice] similar
     to the previous one but where the second hypothesis says that the
@@ -890,15 +885,11 @@ Theorem negation_fn_applied_twice :
   (forall (x : bool), f x = negb x) ->
   forall (b : bool), f (f b) = b.
 Proof.
-  intros f.
-  intros H.
+  intros f H b.
   destruct b.
-  rewrite -> H.
-  rewrite -> H.
-  reflexivity.
-  rewrite -> H.
-  rewrite -> H.
-  reflexivity. Qed.
+  rewrite -> H. rewrite -> H. reflexivity.
+  rewrite -> H. rewrite -> H. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -912,7 +903,12 @@ Theorem andb_eq_orb :
   (andb b c = orb b c) ->
   b = c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b c.
+  destruct b.
+  simpl. intros H. rewrite -> H. reflexivity.
+  simpl. intros H. rewrite <- H. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (binary)  *)
@@ -956,26 +952,37 @@ Inductive bin : Type :=
   | B2 : bin -> bin
   | B2p1 : bin -> bin.
 
-Definition incr (n:bin) : bin :=
-  match n with
+Fixpoint incr (b:bin) : bin :=
+  match b with
   | B0 => B2p1 B0
-  | B2 n' => B2p1 n'
-  | B2p1 n' =>
-    match n' with
-    | B0 => B2 n'
-    | B2 n'' => B2 (B2p1 n'')
-    | B2p1 n'' => B2 (B2 n'')
-    end
-  end.
+  | B2 b' => B2p1 b'
+  | B2p1 b' => B2 (incr b')
+end.
 
 Example test_bin_incr1: incr (B2 (B2 (B2p1 B0))) = B2p1 (B2 (B2p1 B0)).
 Proof. reflexivity. Qed.
 Example test_bin_incr2: incr (B2p1 (B2p1 (B2p1 B0))) = B2 (B2 (B2 (B2p1 B0))).
-Proof. Admitted.
+Proof. reflexivity. Qed.
 Example test_bin_incr3: incr (B2p1 (B2 (B2 (B2p1 B0)))) = B2 (B2p1 (B2 (B2p1 B0))).
-Proof. Admitted.
+Proof. reflexivity. Qed.
 Example test_bin_incr4: incr (B2p1 (B2p1 (B2 (B2p1 B0)))) = B2 (B2 (B2p1 (B2p1 B0))).
-Proof. Admitted.
+Proof. reflexivity. Qed.
+
+Fixpoint bin_to_nat (b:bin) : nat :=
+  match b with
+  | B0 => O
+  | B2 b' => mult 2 (bin_to_nat b')
+  | B2p1 b' => S (mult 2 (bin_to_nat b'))
+end.
+
+Example test_bin_to_nat1: bin_to_nat (B2 (B2 (B2p1 B0))) = 4.
+Proof. reflexivity. Qed.
+Example test_bin_to_nat2: bin_to_nat (B2 (B2 (B2 (B2p1 B0)))) = 8.
+Proof. reflexivity. Qed.
+Example test_bin_to_nat3: bin_to_nat (B2 (B2p1 (B2 (B2p1 B0)))) = 10.
+Proof. reflexivity. Qed.
+Example test_bin_to_nat4: bin_to_nat (B2p1 (B2 (B2p1 (B2p1 B0)))) = 13.
+Proof. reflexivity. Qed.
 
 (** [] *)
 
