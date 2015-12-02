@@ -107,22 +107,17 @@ Qed.
 Theorem andb_true_elim2 : forall b c : bool,
   andb b c = true -> c = true.
 Proof.
-  intros b c.
-  intros H.
-  destruct c.
-  Case "c = true".
-    reflexivity.
-  Case "c = false".
-    rewrite <- H.
-    assert (H2: andb b false = andb false b).
-      destruct b.
-      SCase "b = true".
-        reflexivity.
-      SCase "b = false".
-        reflexivity.
-    rewrite -> H2.
-    reflexivity.
-  Qed.
+  intros b c H.
+  destruct b.
+  Case "b = true".
+    destruct c.
+    SCase "c = true". reflexivity.
+    SCase "c = false". rewrite <- H. reflexivity.
+  Case "b = false".
+    destruct c.
+    SCase "c = true". reflexivity.
+    SCase "c = false". rewrite <- H. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -242,54 +237,40 @@ Theorem mult_0_r : forall n:nat,
 Proof.
   intros n.
   induction n as [| n'].
-  Case "n = O".
-    reflexivity.
-  Case "n = S n".
-    simpl.
-    rewrite -> IHn'.
-    reflexivity.
-  Qed.
+  Case "n = O". reflexivity.
+  Case "n = S n". simpl. rewrite -> IHn'. reflexivity.
+Qed.
 
 Theorem plus_n_Sm : forall n m : nat, 
   S (n + m) = n + (S m).
 Proof. 
   intros n m.
   induction n as [| n'].
-  Case "n = O".
-    reflexivity.
-  Case "n = S n'".
-    simpl.
-    rewrite -> IHn'.
-    reflexivity.
-  Qed.
+  Case "n = O". reflexivity.
+  Case "n = S n'". simpl. rewrite -> IHn'. reflexivity.
+Qed.
 
 Theorem plus_comm : forall n m : nat,
   n + m = m + n.
 Proof.
   intros n m.
   induction n as [| n'].
-  Case "n = O".
-    rewrite -> plus_0_r.
-    reflexivity.
+  Case "n = O". rewrite -> plus_0_r. reflexivity.
   Case "n = S n'".
     simpl.
     rewrite -> IHn'.
     rewrite -> plus_n_Sm.
     reflexivity.
-  Qed.
+Qed.
 
 Theorem plus_assoc : forall n m p : nat,
   n + (m + p) = (n + m) + p.
 Proof.
   intros n m p.
   induction n as [| n'].
-  Case "n = O".
-    reflexivity.
-  Case "n = S n'".
-    simpl.
-    rewrite -> IHn'.
-    reflexivity.
-  Qed.
+  Case "n = O". reflexivity.
+  Case "n = S n'". simpl. rewrite -> IHn'. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -316,7 +297,7 @@ Proof.
     rewrite -> IHn'.
     rewrite <- plus_n_Sm.
     reflexivity.
-  Qed.
+Qed.
 
 (** [] *)
 
@@ -325,13 +306,10 @@ Proof.
 (** Briefly explain the difference between the tactics
     [destruct] and [induction]. *)
 
-(** [destruct] creates one subgoal for each value constructor.
-
-   [induction] does the same for the nullary constructor, but
-     for the non-nullary constructor creates subgoals of the form
-     [P(n') -> P(succ n')] by adding [P(n')] to the list of hypotheses
-     (the "induction hypothesis") and substituting [n] with [succ n]
-     in the conclusion. *)
+(** [destruct] creates one subgoal for each constructor.
+    [induction] does the same, but also adds the hypothesis
+    P(n') to the context for subgoals involving non-nullary
+    constructors. *)
 
 (** [] *)
 
@@ -429,7 +407,7 @@ Proof.
   rewrite -> plus_comm.
   rewrite -> plus_assoc.
   reflexivity.
-  Qed.
+Qed.
 
 (** Now prove commutativity of multiplication.  (You will probably
     need to define and prove a separate subsidiary theorem to be used
@@ -439,16 +417,23 @@ Proof.
 Theorem mult_comm : forall m n : nat,
  m * n = n * m.
 Proof.
-  intros m n.
+  intros m.
   induction m as [| m'].
-  rewrite -> mult_0_r.
-  reflexivity.
-  simpl.
-  rewrite -> IHm'.
-  destruct n as [| n'].
-  reflexivity.
-  simpl.
-  Admitted.
+  Case "m = O".
+    intros n.
+    simpl.
+    rewrite -> mult_0_r.
+    reflexivity.
+  Case "m = S m'".
+    induction n as [| n'].
+    SCase "n = O". rewrite -> mult_0_r. reflexivity.
+    SCase "n = S n'".
+      simpl. rewrite -> IHm'.
+      simpl. rewrite -> plus_swap.
+      rewrite <- IHn'.
+      simpl. rewrite -> IHm'.
+      reflexivity.
+Qed.
 
 (** [] *)
 
@@ -460,6 +445,7 @@ Theorem evenb_n__oddb_Sn : forall n : nat,
   evenb n = negb (evenb (S n)).
 Proof.
   (* FILL IN HERE *) Admitted.
+
 (** [] *)
 
 (* ###################################################################### *)
@@ -569,7 +555,20 @@ Proof.
     wanting to change your original definitions to make the property
     easier to prove, feel free to do so.) *)
 
-(* FILL IN HERE *)
+Theorem bin_to_nat_pres_incr : forall (b : bin) (n : nat),
+  bin_to_nat (incr b) = S (bin_to_nat b).
+Proof.
+  intros.
+  induction b as [| b' | b'].
+  Case "b = B0". reflexivity.
+  Case "b = B2 b'". reflexivity.
+  Case "b = B2p1 b'".
+    simpl. rewrite -> plus_0_r. rewrite -> plus_0_r.
+    rewrite -> IHb'. simpl.
+    rewrite <- plus_n_Sm.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 
