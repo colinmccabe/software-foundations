@@ -189,7 +189,8 @@ Inductive baz : Type :=
    | y : baz -> bool -> baz.
 
 (** How _many_ elements does the type [baz] have? 
-(* FILL IN HERE *)
+(* None. The only constructors, [x] and [y], both require a baz to
+   produce a baz. A nullary baz constructor is required. *)
 *)
 (** [] *)
 
@@ -380,35 +381,55 @@ Definition list123''' := [1; 2; 3].
     and complete the proofs below. *)
 
 Fixpoint repeat {X : Type} (n : X) (count : nat) : list X :=
-  (* FILL IN HERE *) admit.
+  match count with
+  | O => nil
+  | S count' => n :: repeat n count'
+  end.
 
 Example test_repeat1:
   repeat true 2 = cons true (cons true nil).
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Theorem nil_app : forall X:Type, forall l:list X,
   app [] l = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  reflexivity.
+Qed.
 
 Theorem rev_snoc : forall X : Type,
                      forall v : X,
                      forall s : list X,
   rev (snoc s v) = v :: (rev s).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction s as [| v' s'].
+    reflexivity.
+    simpl. rewrite IHs'. reflexivity.
+Qed.
 
 Theorem rev_involutive : forall X : Type, forall l : list X,
   rev (rev l) = l.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  induction l as [| x l'].
+  Case "l = nil". reflexivity.
+  Case "l = cons".
+    simpl. rewrite rev_snoc.
+    rewrite IHl'.
+    reflexivity.
+Qed.
 
 Theorem snoc_with_append : forall X : Type,
                          forall l1 l2 : list X,
                          forall v : X,
   snoc (l1 ++ l2) v = l1 ++ (snoc l2 v).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l1 as [| v' l1'].
+    reflexivity.
+    simpl. rewrite IHl1'. reflexivity.
+Qed.
+
 (** [] *)
 
 (* ###################################################### *)
@@ -638,8 +659,7 @@ Definition prod_curry {X Y Z : Type}
     the theorems below to show that the two are inverses. *)
 
 Definition prod_uncurry {X Y Z : Type}
-  (f : X -> Y -> Z) (p : X * Y) : Z :=
-  (* FILL IN HERE *) admit.
+  (f : X -> Y -> Z) (p : X * Y) : Z := f (fst p) (snd p).
 
 (** (Thought exercise: before running these commands, can you
     calculate the types of [prod_curry] and [prod_uncurry]?) *)
@@ -650,13 +670,18 @@ Check @prod_uncurry.
 Theorem uncurry_curry : forall (X Y Z : Type) (f : X -> Y -> Z) x y,
   prod_curry (prod_uncurry f) x y = f x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  reflexivity.
+Qed.
 
 Theorem curry_uncurry : forall (X Y Z : Type)
                                (f : (X * Y) -> Z) (p : X * Y),
   prod_uncurry (prod_curry f) p = f p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct p.
+  reflexivity.
+Qed.
+
 (** [] *)
 
 (* ###################################################### *)
@@ -836,7 +861,15 @@ Proof.
     reflexivity.
   Case "n = cons".
     simpl.
-  Admitted.
+    assert (forall (s : list X) (v : X), map f (snoc s v) = snoc (map f s) (f v)) as H.
+      intros.
+      induction s as [| v' s'].
+      reflexivity.
+      simpl. rewrite IHs'. reflexivity.
+    rewrite H.
+    rewrite IHl'.
+    reflexivity.
+Qed.
 
 (** [] *)
 
@@ -932,7 +965,7 @@ Proof. reflexivity. Qed.
     situation where it would be useful for [X] and [Y] to be
     different? *)
 
-(** Building up a string from a list of nats *)
+(** Building up a string ([Y]) from a list of nat ([X]) *)
 
 
 (* ###################################################### *)
@@ -1070,7 +1103,8 @@ Proof.
   unfold override.
   rewrite -> H0.
   rewrite -> H.
-  reflexivity. Qed.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -1097,10 +1131,13 @@ Theorem fold_length_correct : forall X (l : list X),
   fold_length l = length l.
 Proof.
   intros.
-  unfold fold_length.
-  unfold fold.
-  unfold length.
-  Admitted.
+  induction l as [| x l'].
+  Case "l = nil". reflexivity.
+  Case "l = cons".
+    unfold fold_length.
+    simpl. rewrite <- IHl'.
+    unfold fold_length. reflexivity. 
+Qed.
 
 (** [] *)
 
@@ -1109,12 +1146,24 @@ Proof.
     below. *)
 
 Definition fold_map {X Y:Type} (f : X -> Y) (l : list X) : list Y :=
-(* FILL IN HERE *) admit.
+  fold (fun x acc => (f x) :: acc) l [].
 
 (** Write down a theorem [fold_map_correct] in Coq stating that
    [fold_map] is correct, and prove it. *)
 
-(* FILL IN HERE *)
+Theorem fold_map_correct : forall (X Y Z : Type) (f : X -> Y) (l : list X),
+  map f l = fold_map f l.
+Proof.
+  intros.
+  induction l as [| x l'].
+  Case "l = nil". reflexivity.
+  Case "l = cons".
+    unfold fold_map.
+    simpl. rewrite IHl'.
+    unfold fold_map.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (index_informal)  *)
