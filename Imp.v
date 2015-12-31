@@ -526,13 +526,20 @@ Proof.
     as elegant as possible. *)
 
 Fixpoint optimize_0plus_b (b : bexp) : bexp :=
-  (* FILL IN HERE *) admit.
-
+  match b with
+  | BEq a1 a2 => BEq (optimize_0plus a1) (optimize_0plus a2)
+  | BLe a1 a2 => BLe (optimize_0plus a1) (optimize_0plus a2)
+  | b' => b'
+  end.
 
 Theorem optimize_0plus_b_sound : forall b,
   beval (optimize_0plus_b b) = beval b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction b as [| | a1 a2 | a1 a2 | b | b1 b2];
+    try reflexivity;
+    try (simpl; repeat (rewrite optimize_0plus_sound); reflexivity).
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, optional (optimizer)  *)
@@ -809,10 +816,88 @@ Qed.
 (** Write a relation [bevalR] in the same style as
     [aevalR], and prove that it is equivalent to [beval].*)
 
-(* 
-Inductive bevalR:
-(* FILL IN HERE *)
-*)
+
+Inductive bevalR : bexp -> bool -> Prop :=
+  | E_BTrue :
+      bevalR BTrue true
+  | E_BFalse :
+      bevalR BFalse false
+  | E_BEq : forall (e1 e2 : aexp) (n1 n2 : nat),
+      aevalR e1 n1 ->
+      aevalR e2 n2 ->
+      bevalR (BEq e1 e2) (beq_nat n1 n2)
+  | E_BLe : forall (e1 e2 : aexp) (n1 n2 : nat),
+      aevalR e1 n1 ->
+      aevalR e2 n2 ->
+      bevalR (BLe e1 e2) (ble_nat n1 n2)
+  | E_BNot : forall (e : bexp) (b : bool),
+      bevalR e b ->
+      bevalR (BNot e) (negb b)
+  | E_BAnd : forall (e1 e2 : bexp) (b1 b2 : bool),
+      bevalR e1 b1 ->
+      bevalR e2 b2 ->
+      bevalR (BAnd e1 e2) (andb b1 b2).
+
+Theorem beval_iff_bevalR : forall a b,
+  (bevalR a b) <-> beval a = b.
+Proof.
+  split.
+  Case "->".
+    intros H.
+    induction H.
+    SCase "E_BTrue".
+      reflexivity.
+    SCase "E_BFalse".
+      reflexivity.
+    SCase "E_Beq".
+      simpl.
+      apply aeval_iff_aevalR in H.
+      apply aeval_iff_aevalR in H0.
+      rewrite H. rewrite H0.
+      reflexivity.
+    SCase "E_BLe".
+      simpl.
+      apply aeval_iff_aevalR in H.
+      apply aeval_iff_aevalR in H0.
+      rewrite H. rewrite H0.
+      reflexivity.
+    SCase "E_BNot".
+      simpl. rewrite IHbevalR.
+      reflexivity.
+    SCase "E_BAnd".
+      simpl. rewrite IHbevalR1. rewrite IHbevalR2.
+      reflexivity.
+  Case "<-".
+    generalize dependent b.
+    induction a.
+    SCase "BTrue".
+      intros.
+      rewrite <- H. simpl. apply E_BTrue.
+    SCase "BFalse".
+      intros.
+      rewrite <- H. simpl. apply E_BFalse.
+    SCase "BEq".
+      intros.
+      rewrite <- H. simpl.
+      apply E_BEq.
+      apply aeval_iff_aevalR. reflexivity.
+      apply aeval_iff_aevalR. reflexivity.
+    SCase "BLe".
+      intros.
+      rewrite <- H. simpl. apply E_BLe.
+      apply aeval_iff_aevalR. reflexivity.
+      apply aeval_iff_aevalR. reflexivity.
+    SCase "BNot".
+      intros.
+      rewrite <- H. simpl. apply E_BNot.
+      apply IHa. reflexivity.
+    SCase "BAnd".
+      intros.
+      rewrite <- H. simpl. apply E_BAnd.
+      apply IHa1. reflexivity.
+      apply IHa2. reflexivity.
+Qed.
+
 (** [] *)
 End AExp.
 
