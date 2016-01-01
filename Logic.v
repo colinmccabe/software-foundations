@@ -287,8 +287,8 @@ Theorem iff_refl : forall P : Prop,
 Proof. 
   intros P.
   split.
-  intros HP. apply HP.
-  intros HP. apply HP.
+  Case "->". intros HP. apply HP.
+  Case "<-". intros HP. apply HP.
 Qed.
 
 Theorem iff_trans : forall P Q R : Prop, 
@@ -407,7 +407,18 @@ Qed.
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split.
+  Case "->".
+    intros. destruct H as [HP | [HQ HR]].
+    SCase "HP". split. left. apply HP. left. apply HP.
+    SCase "HQ /\ HR". split. right. apply HQ. right. apply HR.
+  Case "<-".
+    intros. destruct H as [[HP1 | HQ] [HP2 | HR]].
+    SCase "HP". left. apply HP1.
+    SCase "HP /\ HR". left. apply HP1.
+    SCase "HP /\ HQ". left. apply HP2.
+    SCase "HQ /\ HR". right. split. apply HQ. apply HR.
+Qed.
 
 (** [] *)
 
@@ -457,7 +468,10 @@ Qed.
 Theorem orb_prop : forall b c,
   orb b c = true -> b = true \/ c = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct b.
+  left. reflexivity.
+  simpl in H. right. apply H.
+Qed.
 
 (** **** Exercise: 2 stars, optional (orb_false_elim)  *)
 Theorem orb_false_elim : forall b c,
@@ -737,7 +751,13 @@ Qed.
 Theorem beq_nat_false : forall n m,
   beq_nat n m = false -> n <> m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold not. intros.
+  rewrite H0 in H.
+  rewrite <- beq_nat_refl in H.
+  inversion H.
+Qed.
+
 (** [] *)
 
 
