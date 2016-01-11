@@ -51,7 +51,13 @@ Inductive ev : nat -> Prop :=
 Theorem double_even : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n as [| n'].
+  Case "n = O". simpl. apply ev_0.
+  Case "n = S n'". simpl. apply ev_SS.
+  apply IHn'.
+Qed.
+
 (** [] *)
 
 
@@ -138,7 +144,10 @@ Proof.
 (** **** Exercise: 1 star (varieties_of_beauty)  *)
 (** How many different ways are there to show that [8] is [beautiful]? *)
 
-(* FILL IN HERE *)
+(** Infinite. It is always possible to prove 3 is beautiful by asserting
+    that 0 and 3 are beautiful, ad infinitium. Similarly for 5 and 0
+    The proof tree can always be extended upward. *)
+
 (** [] *)
 
 (* ####################################################### *)
@@ -193,13 +202,25 @@ Qed.
 (** **** Exercise: 2 stars (b_times2)  *)
 Theorem b_times2: forall n, beautiful n -> beautiful (2*n).
 Proof.
-    (* FILL IN HERE *) Admitted.
+  intros n B.
+  simpl. rewrite -> plus_0_r.
+  apply b_sum.
+  apply B. apply B.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (b_timesm)  *)
 Theorem b_timesm: forall n m, beautiful n -> beautiful (m*n).
 Proof.
-   (* FILL IN HERE *) Admitted.
+  intros n m H.
+  induction m as [| m'].
+  simpl. apply b_0.
+  simpl. apply b_sum.
+  apply H.
+  apply IHm'.
+Qed.
+
 (** [] *)
 
 
@@ -244,7 +265,19 @@ Inductive gorgeous : nat -> Prop :=
 (** Write out the definition of [gorgeous] numbers using inference rule
     notation.
  
-(* FILL IN HERE *)
+-----------
+gorgeous 0
+
+
+gorgeous n
+-------------
+gorgeous (3+n)
+
+
+gorgeous n
+-------------
+gorgeous (5+n)
+
 []
 *)
 
@@ -253,7 +286,16 @@ Inductive gorgeous : nat -> Prop :=
 Theorem gorgeous_plus13: forall n, 
   gorgeous n -> gorgeous (13+n).
 Proof.
-   (* FILL IN HERE *) Admitted.
+  intros n H.
+  induction H.
+  Case "g_0".
+    apply g_plus5. apply g_plus5. apply g_plus3. apply g_0.
+  Case "g_plus3".
+    apply g_plus3. apply IHgorgeous.
+  Case "g_plus5".
+    apply g_plus5. apply IHgorgeous.
+Qed.
+
 (** [] *)
 
 (** *** *)
@@ -306,7 +348,13 @@ Qed.
 Theorem gorgeous_sum : forall n m,
   gorgeous n -> gorgeous m -> gorgeous (n + m).
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros n m Gn Gm.
+  induction Gn as [|n'|n'].
+  Case "g_0". apply Gm.
+  Case "g_plus3". apply g_plus3. apply IHGn.
+  Case "g_plus5". apply g_plus5. apply IHGn.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (beautiful__gorgeous)  *)
@@ -352,7 +400,10 @@ Qed.
 (** Could this proof also be carried out by induction on [n] instead
     of [E]?  If not, why not? *)
 
-(* FILL IN HERE *)
+(** Induction on [n] would produce the induction hypothesis "for any
+    [n'], if [evenb n'], then [evenb (S n')]". This is impossible to
+    prove. *)
+
 (** [] *)
 
 (** Intuitively, the induction principle [ev n] evidence [ev n] is
@@ -371,8 +422,11 @@ Qed.
    Intuitively, we expect the proof to fail because not every
    number is even. However, what exactly causes the proof to fail?
 
-(* FILL IN HERE *)
-*)
+(* Same as the previous exercise. It is impossible to prove that,
+   given an arbitrary [n'], [S n'] is even. What if [n'] is itself
+   even? *)
+ *)
+
 (** [] *)
 
 (** Here's another exercise requiring induction on evidence. *)
@@ -381,7 +435,12 @@ Qed.
 Theorem ev_sum : forall n m,
    ev n -> ev m -> ev (n+m).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros n m En Em.
+  induction En as [| n'].
+  simpl. apply Em.
+  simpl. apply ev_SS. apply IHEn.
+Qed.
+
 (** [] *)
 
 
@@ -460,7 +519,11 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H as [| n' H'].
+  inversion H' as [| n'' H''].
+  apply H''.
+Qed.
 
 (** The [inversion] tactic can also be used to derive goals by showing
     the absurdity of a hypothesis. *)
@@ -468,7 +531,12 @@ Proof.
 Theorem even5_nonsense : 
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros Ev5.
+  inversion Ev5 as [| n' Ev3].
+  inversion Ev3 as [| n'' Ev1].
+  inversion Ev1.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (ev_ev__ev)  *)
@@ -584,7 +652,36 @@ Qed.
        forall l, pal l -> l = rev l.
 *)
 
-(* FILL IN HERE *)
+Inductive pal {X:Type} : list X -> Prop :=
+  | pal_nil : pal []
+  | pal_single : forall x, pal [x]
+  | pal_snoc : forall x l, pal l -> pal (x :: snoc l x).
+
+Theorem pal_app_rev : forall X (l : list X),
+  pal (l ++ rev l).
+Proof.
+  intros X l.
+  induction l as [| x l'].
+  Case "l = []". simpl. apply pal_nil.
+  Case "l = x :: l'".
+    simpl. rewrite <- snoc_with_append.
+    apply pal_snoc.
+    apply IHl'.
+Qed.
+
+Theorem pal_rev : forall X (l : list X),
+  pal l -> l = rev l.
+Proof.
+  intros.
+  induction H as [| x | x' l'].
+  Case "pal_nil". reflexivity.
+  Case "pal_single". reflexivity.
+  Case "pal_snoc".
+    simpl. rewrite rev_snoc.
+    rewrite <- IHpal.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (* Again, the converse direction is much more difficult, due to the
@@ -689,14 +786,17 @@ Inductive next_even : nat -> nat -> Prop :=
 (** Define an inductive binary relation [total_relation] that holds
     between every pair of natural numbers. *)
 
-(* FILL IN HERE *)
+Inductive total_relation : nat -> nat -> Prop :=
+  | total : forall n m, total_relation n m.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (empty_relation)  *)
 (** Define an inductive binary relation [empty_relation] (on numbers)
     that never holds. *)
 
-(* FILL IN HERE *)
+Inductive empty_relation : nat -> nat -> Prop := .
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (le_exercises)  *)
@@ -783,18 +883,21 @@ Inductive R : nat -> nat -> nat -> Prop :=
    | c5 : forall m n o, R m n o -> R n m o.
 
 (** - Which of the following propositions are provable?
-      - [R 1 1 2]
-      - [R 2 2 6]
+      - [R 1 1 2] Yes, by applying c3, c2, c1
+      - [R 2 2 6] No. N is equivalent to additon, but 2 + 2 /= 6
 
     - If we dropped constructor [c5] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer.
+
+        No - applying c5 in a proof results in the exact same goal,
+        so it is completely superfluous.
   
     - If we dropped constructor [c4] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer.
 
-(* FILL IN HERE *)
+        No - applying c2 and c3 has the same effect as applying c4.
 []
 *)
 
@@ -1000,7 +1103,7 @@ Definition natural_number_induction_valid : Prop :=
     equivalent to [Peven n] otherwise. *)
 
 Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
-  (* FILL IN HERE *) admit.
+  fun (n:nat) => if oddb n then Podd n else Peven n.
 
 (** To test your definition, see whether you can prove the following
     facts: *)
@@ -1011,7 +1114,12 @@ Theorem combine_odd_even_intro :
     (oddb n = false -> Peven n) ->
     combine_odd_even Podd Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold combine_odd_even.
+  destruct (oddb n).
+  Case "oddb n = true". apply H. reflexivity.
+  Case "oddb n = false". apply H0. reflexivity.
+Qed.
 
 Theorem combine_odd_even_elim_odd :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1019,7 +1127,11 @@ Theorem combine_odd_even_elim_odd :
     oddb n = true ->
     Podd n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold combine_odd_even in H.
+  rewrite H0 in H.
+  apply H.
+Qed.
 
 Theorem combine_odd_even_elim_even :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -1027,7 +1139,11 @@ Theorem combine_odd_even_elim_even :
     oddb n = false ->
     Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold combine_odd_even in H.
+  rewrite H0 in H.
+  apply H.
+Qed.
 
 (** [] *)
 
