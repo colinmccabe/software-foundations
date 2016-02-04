@@ -137,7 +137,13 @@ Definition prog_i : com :=
   END.
 
 Definition equiv_classes : list (list com) :=
-(* FILL IN HERE *) admit.
+  [ [prog_a;prog_d]  (* if X = 0 then does nothing, else diverges *)
+  ; [prog_b;prog_e]  (* Sets Y to 0 *)
+  ; [prog_c;prog_h]  (* Does nothing *)
+  ; [prog_f;prog_g]  (* Diverges *)
+  ; [prog_i]         (* if X = Y then does nothing, else diverges *)
+  ].
+
 (* GRADE_TEST 2: check_equiv_classes equiv_classes *)
 (** [] *)
 
@@ -190,7 +196,18 @@ Theorem skip_right: forall c,
     (c;; SKIP) 
     c.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv.
+  split; intros H.
+  Case "->".
+    inversion H. subst.
+    inversion H5. subst.
+    assumption.
+  Case "<-".
+    apply E_Seq with st'.
+    SCase "c". assumption.
+    SCase "SKIP". apply E_Skip.
+Qed.
+
 (** [] *)
 
 (** Similarly, here is a simple transformations that simplifies [IFB]
@@ -281,7 +298,26 @@ Theorem IFB_false: forall b c1 c2,
     (IFB b THEN c1 ELSE c2 FI) 
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b c1 c2 Hb.
+  unfold cequiv.
+  split; intros H.
+  Case "->".
+    inversion H; subst.
+    SCase "b evaluates to true".
+      unfold bequiv in Hb.
+      simpl in Hb. rewrite Hb in H5.
+      inversion H5.
+    SCase "b evaluates to false".
+      assumption.
+  Case "<-".
+    apply E_IfFalse.
+    SCase "beval st b = false".
+      unfold bequiv in Hb. simpl in Hb.
+      rewrite Hb. reflexivity.
+    SCase "c2 / st || st'".
+      assumption.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (swap_if_branches)  *)
@@ -293,7 +329,30 @@ Theorem swap_if_branches: forall b e1 e2,
     (IFB b THEN e1 ELSE e2 FI)
     (IFB BNot b THEN e2 ELSE e1 FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold cequiv.
+  split; intros.
+  Case "->".
+    inversion H; subst.
+    SCase "b evaluates to true".
+      apply E_IfFalse. simpl. rewrite H5. reflexivity.
+      assumption.
+    SCase "b evaluates to false".
+      apply E_IfTrue. simpl. rewrite H5. reflexivity.
+      assumption.
+  Case "<-".
+    assert (forall st b1 b2, beval st (BNot b1) = b2 -> beval st b1 = negb b2) as beval_bnot_negb.
+      intros. inversion H0.
+      simpl. rewrite negb_involutive. reflexivity.
+    inversion H; subst.
+    SCase "b evaluates to true".
+      apply beval_bnot_negb in H5. simpl in H5.
+      apply E_IfFalse; assumption.
+    SCase "b evaluates to false".
+      apply beval_bnot_negb in H5. simpl in H5.
+      apply E_IfTrue; assumption.
+Qed.
+
 (** [] *)
 
 (** *** *)
