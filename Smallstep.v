@@ -209,7 +209,9 @@ Example test_step_2 :
           (C 2) 
           (C (0 + 3))).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  repeat apply ST_Plus2. apply ST_PlusConstConst.
+Qed.
+
 (** [] *)
 
 
@@ -443,7 +445,26 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
 Theorem step_deterministic :
   deterministic step.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1; intros y2 Hy2.
+  Case "ST_PlusConstConst".
+    inversion Hy2; subst.
+    SCase "ST_PlusConstConst". reflexivity.
+    SCase "ST_Plus1". inversion H2.
+    SCase "ST_Plus2". inversion H3.
+  Case "ST_Plus1".
+    inversion Hy2.
+    SCase "ST_PlusConstConst". rewrite <- H0 in Hy1. inversion Hy1.
+    SCase "ST_Plus1". rewrite <- (IHHy1 t1'0). reflexivity. assumption.
+    SCase "ST_Plus2". inversion H1. rewrite <- H4 in Hy1. inversion Hy1.
+  Case "ST_Plus2".
+    inversion Hy2.
+    SCase "ST_PlusConstConst". rewrite <- H2 in Hy1. inversion Hy1.
+    SCase "ST_Plus1". inversion H. rewrite <- H4 in H3. inversion H3.
+    SCase "ST_Plus2".  rewrite <- (IHHy1 t2'0). reflexivity. assumption.
+Qed.
+
 (** [] *)
 
 (* ########################################################### *)
@@ -701,7 +722,12 @@ Inductive step : tm -> tm -> Prop :=
 Definition bool_step_prop1 :=
   tfalse ==> tfalse.
 
-(* FILL IN HERE *)
+Example bool_step_prop1_proof :
+  ~(bool_step_prop1).
+Proof.
+  unfold not; unfold bool_step_prop1; intros.
+  inversion H.
+Qed.
 
 Definition bool_step_prop2 :=
      tif
@@ -711,7 +737,12 @@ Definition bool_step_prop2 :=
   ==> 
      ttrue.
 
-(* FILL IN HERE *)
+Example bool_step_prop2_proof :
+  ~(bool_step_prop2).
+Proof.
+  unfold not; unfold bool_step_prop2; intros.
+  inversion H.
+Qed.
 
 Definition bool_step_prop3 :=
      tif
@@ -724,7 +755,14 @@ Definition bool_step_prop3 :=
        (tif ttrue ttrue ttrue)
        tfalse.
 
-(* FILL IN HERE *)
+Example bool_step_prop3_proof :
+  bool_step_prop3.
+Proof.
+  unfold bool_step_prop3.
+  apply ST_If.
+  apply ST_IfTrue.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (progress_bool)  *)
@@ -775,7 +813,8 @@ Inductive step : tm -> tm -> Prop :=
   | ST_If : forall t1 t1' t2 t3,
       t1 ==> t1' ->
       tif t1 t2 t3 ==> tif t1' t2 t3
-(* FILL IN HERE *)
+  | ST_IfBranchesSame : forall t1 t2,
+      tif t1 t2 t2 ==> t2
 
   where " t '==>' t' " := (step t t').
 
@@ -790,7 +829,10 @@ Definition bool_step_prop4 :=
 Example bool_step_prop4_holds : 
   bool_step_prop4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold bool_step_prop4.
+  apply ST_IfBranchesSame.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (properties_of_altered_step)  *)
@@ -966,7 +1008,9 @@ Proof.
 Lemma test_multistep_2:
   C 3 ==>* C 3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply multi_refl.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (test_multistep_3)  *)
@@ -975,7 +1019,9 @@ Lemma test_multistep_3:
    ==>*
       P (C 0) (C 3).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply multi_refl.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (test_multistep_4)  *)
@@ -990,7 +1036,16 @@ Lemma test_multistep_4:
         (C 0)
         (C (2 + (0 + 3))).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply multi_step with (P (C 0) (P (C 2) (C (0 + 3)))).
+  apply ST_Plus2. apply v_const.
+  apply ST_Plus2. apply v_const.
+  apply ST_PlusConstConst.
+  apply multi_step with (P (C 0) (C (2 + (0 + 3)))).
+  apply ST_Plus2. apply v_const.
+  apply ST_PlusConstConst.
+  apply multi_refl.
+Qed.
+
 (** [] *)
 
 (* ########################################################### *)
@@ -1056,7 +1111,15 @@ Lemma multistep_congr_2 : forall t1 t2 t2',
      t2 ==>* t2' ->
      P t1 t2 ==>* P t1 t2'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t1 t2 t2' Hv H. induction H.
+  Case "multi_refl". apply multi_refl.
+  Case "multi_step". apply multi_step with (P t1 y).
+    apply ST_Plus2.
+      apply Hv.
+      apply H.
+    apply IHmulti.
+Qed.
+
 (** [] *)
 
 (** _Theorem_: The [step] function is normalizing -- i.e., for every
@@ -1156,7 +1219,22 @@ Theorem eval__multistep : forall t n,
     includes [==>]. *)
 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  tm_cases (induction H) Case.
+  Case "C".
+    apply multi_refl.
+  Case "P".
+    apply multi_trans with (P (C n1) t2).
+    apply multistep_congr_1.
+    apply IHeval1.
+    apply multi_trans with (P (C n1) (C n2)).
+    apply multistep_congr_2.
+    apply v_const.
+    apply IHeval2.
+    apply multi_R.
+    apply ST_PlusConstConst.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (eval__multistep_inf)  *)
@@ -1175,7 +1253,17 @@ Lemma step__eval : forall t t' n,
      t || n.
 Proof.
   intros t t' n Hs. generalize dependent n.
-  (* FILL IN HERE *) Admitted.
+  step_cases (induction Hs) Case; intros.
+  Case "ST_PlusConstConst". inversion H.
+    apply E_Plus. apply E_Const. apply E_Const.
+  Case "ST_Plus1".
+    inversion H.
+    apply E_Plus. apply IHHs. assumption. assumption.
+  Case "ST_Plus2".
+    inversion H0.
+    apply E_Plus. assumption. apply IHHs. assumption.
+Qed.
+
 (** [] *)
 
 (** The fact that small-step reduction implies big-step is now
@@ -1190,7 +1278,21 @@ Proof.
 Theorem multistep__eval : forall t t',
   normal_form_of t t' -> exists n, t' = C n /\ t || n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold normal_form_of in H. unfold step_normal_form in H. destruct H.
+  multi_cases (induction H) Case.
+  Case "multi_refl".
+    apply nf_same_as_value in H0.
+    inversion H0.
+    exists n. split. reflexivity. apply E_Const.
+  Case "multi_step".
+    apply IHmulti in H0.
+    inversion H0. destruct H2.
+    exists x0.
+    split. assumption.
+    apply step__eval with y. assumption. assumption.
+Qed.
+
 (** [] *)
 
 (* ########################################################### *)
@@ -1271,7 +1373,46 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
 
     Prove or disprove these two properties for the combined language. *)
 
-(* FILL IN HERE *)
+Theorem step_deterministic :
+  deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  step_cases (induction Hy1) Case; intros y2 Hy2;
+    inversion Hy2; subst; try (solve by inversion).
+  Case "ST_PlusConstConst".
+    SCase "ST_PlusConstConst". reflexivity.
+  Case "ST_Plus1".
+    SCase "ST_Plus1". apply IHHy1 in H2. rewrite H2. reflexivity.
+    SCase "ST_Plus2".
+      inversion H1; try (rewrite <- H in Hy1); subst; solve by inversion.
+  Case "ST_Plus2".
+    SCase "ST_Plus1".
+      inversion H; try (rewrite <- H0 in H3); solve by inversion.
+    SCase "ST_Plus2". apply IHHy1 in H4. rewrite H4. reflexivity.
+  Case "ST_IfTrue".
+    SCase "ST_IfTrue". reflexivity.
+  Case "ST_IfFalse".
+    SCase "ST_IfFalse". reflexivity.
+  Case "ST_If".
+    SCase "ST_If". apply IHHy1 in H3. rewrite H3. reflexivity.
+Qed.
+
+
+Theorem step_no_strong_progress : exists t,
+  ~(value t) /\ normal_form step t.
+Proof.
+  exists (tif (C 0) (C 0) (C 0)).
+  split.
+  Case "left".
+    unfold not; intros.
+    solve by inversion.
+  Case "right".
+    unfold normal_form; unfold not; intros.
+    solve by inversion 3.
+Qed.
+
 (** [] *)
 
 End Combined.
