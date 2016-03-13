@@ -185,7 +185,17 @@ Hint Unfold stuck.
 Example some_term_is_stuck :
   exists t, stuck t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (tiszero ttrue).
+  unfold stuck; split.
+  Case "In normal form".
+    unfold normal_form.
+    unfold not; intros.
+    solve by inversion 3.
+  Case "Not a value".
+    unfold not; intros.
+    inversion H; solve by inversion.
+Qed.
+
 (** [] *)
 
 (** However, although values and normal forms are not the same in this
@@ -332,7 +342,10 @@ Example succ_hastype_nat__hastype_nat : forall t,
   |- tsucc t \in TNat ->
   |- t \in TNat.  
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H. assumption.
+Qed.
+
 (** [] *)
 
 (* ###################################################################### *)
@@ -391,7 +404,46 @@ Proof with auto.
     SCase "t1 can take a step".
       inversion H as [t1' H1].
       exists (tif t1' t2 t3)...
-  (* FILL IN HERE *) Admitted.
+  Case "T_Succ".
+    inversion IHHT as [Ht1Value | Ht1Step].
+    SCase "t1 is a value".
+      left.
+      apply (nat_canonical t1 HT) in Ht1Value.
+      unfold value. right.
+      apply nv_succ. assumption.
+    SCase "t1 can take a step".
+      right.
+      inversion Ht1Step.
+      exists (tsucc x).
+      apply ST_Succ. assumption.
+  Case "T_Pred".
+    inversion IHHT as [Ht1Value | Ht1Step].
+    SCase "t1 is a value".
+      left.
+      apply (nat_canonical t1 HT) in Ht1Value.
+      unfold value. right.
+      inversion Ht1Value.
+      admit. admit.
+    SCase "t1 can take a step".
+      right.
+      inversion Ht1Step.
+      exists (tpred x).
+      apply ST_Pred. assumption.
+  Case "T_Iszero".
+    inversion IHHT as [Ht1Value | Ht1Step].
+    SCase "t1 is a value".
+      left.
+      unfold value. left.
+      apply (nat_canonical t1 HT) in Ht1Value.
+      inversion Ht1Value.
+      admit. admit.
+    SCase "t1 can take a step".
+      right.
+      inversion Ht1Step.
+      exists (tiszero x).
+      apply ST_Iszero. assumption.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_progress_informal)  *)
@@ -428,14 +480,14 @@ Proof with auto.
 
 (** **** Exercise: 1 star (step_review)  *)
 (** Quick review.  Answer _true_ or _false_.  In this language...
-      - Every well-typed normal form is a value.
+      - Every well-typed normal form is a value. True
 
-      - Every value is a normal form.
+      - Every value is a normal form. True
 
       - The single-step evaluation relation is
-        a partial function (i.e., it is deterministic).
+        a partial function (i.e., it is deterministic). True
 
-      - The single-step evaluation relation is a _total_ function.
+      - The single-step evaluation relation is a _total_ function. False
 
 *)
 (** [] *)
@@ -476,7 +528,17 @@ Proof with auto.
       SCase "ST_IfFalse". assumption.
       SCase "ST_If". apply T_If; try assumption.
         apply IHHT1; assumption.
-    (* FILL IN HERE *) Admitted.
+   Case "T_Succ". inversion HE; subst.
+     apply T_Succ. apply IHHT in H0. assumption.
+   Case "T_Pred". inversion HE; subst.
+     SCase "ST_PredZero". apply T_Zero.
+     SCase "ST_PredSucc". admit.
+     SCase "ST_Pred".
+       apply IHHT in H0.
+       apply T_Pred.
+       assumption.
+   Case "T_Iszero".
+Admitted.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_preservation_informal)  *)
