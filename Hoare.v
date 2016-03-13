@@ -189,19 +189,32 @@ Notation "{{ P }}  c  {{ Q }}" :=
 (** Paraphrase the following Hoare triples in English.
    1) {{True}} c {{X = 5}}
 
+      X will *always* be 5 after running c, for any starting state.
+
    2) {{X = m}} c {{X = m + 5)}}
+
+      c adds 5 to x.
 
    3) {{X <= Y}} c {{Y <= X}}
 
+      If X <= Y initially, then Y <= X after running c.
+
    4) {{True}} c {{False}}
+
+      c doesn't terminate.
 
    5) {{X = m}} 
       c
       {{Y = real_fact m}}.
 
+      c replaces X with its factorial.
+
    6) {{True}} 
       c 
       {{(Z * Z) <= m /\ ~ (((S Z) * (S Z)) <= m)}}
+
+      Z^2 and (Z+1)^2 will always be less than a given m
+      after running c.
 
  *)
 
@@ -221,28 +234,45 @@ Notation "{{ P }}  c  {{ Q }}" :=
     claimed relation between [P], [c], and [Q] is true?
    1) {{True}} X ::= 5 {{X = 5}}
 
+      Yes
+
    2) {{X = 2}} X ::= X + 1 {{X = 3}}
+
+      Yes
 
    3) {{True}} X ::= 5; Y ::= 0 {{X = 5}}
 
+      Yes
+
    4) {{X = 2 /\ X = 3}} X ::= 5 {{X = 0}}
+
+      Yes
 
    5) {{True}} SKIP {{False}}
 
+      No
+
    6) {{False}} SKIP {{True}}
 
+      Yes
+
    7) {{True}} WHILE True DO SKIP END {{False}}
+
+      Yes
 
    8) {{X = 0}}
       WHILE X == 0 DO X ::= X + 1 END
       {{X = 1}}
 
+      Yes
+
    9) {{X = 1}}
       WHILE X <> 0 DO X ::= X + 1 END
       {{X = 100}}
 
+      No
+
 *)
-(* FILL IN HERE *)
 (** [] *)
 
 (** (Note that we're using informal mathematical notations for
@@ -425,7 +455,22 @@ Proof.
    ...into formal statements [assn_sub_ex1, assn_sub_ex2] 
    and use [hoare_asgn] to prove them. *)
 
-(* FILL IN HERE *)
+Example hoare_asgn_examples_1 :
+  {{(fun st => st X <= 5) [X |-> (APlus (AId X) (ANum 1))]}}
+  (X ::= (APlus (AId X) (ANum 1)))
+  {{fun st => st X <= 5  }}.
+Proof.
+  apply hoare_asgn.
+Qed.
+
+Example hoare_asgn_examples_2 :
+  {{(fun st => 0 <= st X /\ st X <= 5) [X |-> (ANum 3)]}}
+  (X ::= (ANum 3))
+  {{fun st => 0 <= st X /\ st X <= 5}}.
+Proof.
+  apply hoare_asgn.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars (hoare_asgn_wrong)  *)
@@ -440,7 +485,27 @@ Proof.
     arithmetic expression [a], and your counterexample needs to
     exhibit an [a] for which the rule doesn't work. *)
 
-(* FILL IN HERE *)
+Lemma stupid : forall n,
+  n <> n + 1.
+Proof.
+  induction n as [| n'].
+  Case "n = 0". inversion 1.
+  Case "n = S n'".
+    unfold not in IHn'. unfold not. intros. inversion H.
+    apply IHn' in H1. inversion H1.
+Qed.
+
+Example hoare_asgn_wrong : exists a,
+  {{fun st => True}}
+  (X ::= a)
+  {{fun st => st X <> (aeval st a)}}.
+Proof.
+  exists (APlus (AId X) (ANum 1)).
+  unfold hoare_triple. intros.
+  inversion H; subst.
+  simpl. apply stupid.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (hoare_asgn_fwd)  *)
@@ -718,7 +783,31 @@ Qed.
    ...into formal statements [assn_sub_ex1', assn_sub_ex2'] and 
    use [hoare_asgn] and [hoare_consequence_pre] to prove them. *)
 
-(* FILL IN HERE *)
+Theorem assn_sub_ex1' :
+  {{fun st => st X + 1 <= 5}}
+  (X ::= APlus (AId X) (ANum 1))
+  {{fun st => st X <= 5}}.
+Proof.
+  apply hoare_consequence_pre
+    with (P' := (fun st => st X <= 5) [X |-> APlus (AId X) (ANum 1)]).
+  apply hoare_asgn.
+  intros st H.
+  unfold assn_sub. simpl. rewrite update_eq. assumption.
+Qed.
+
+Theorem assn_sub_ex2' :
+  {{fun st => 0 <= 3 /\ 3 <= 5}}
+  (X ::= (ANum 3))
+  {{ (fun st => 0 < st X /\ st X <= 5) }}.
+Proof.
+  apply hoare_consequence_pre
+    with (P' := (fun st => 0 < st X /\ st X <= 5) [X |-> ANum 3]).
+  apply hoare_asgn.
+  intros st H.
+  unfold assn_sub. simpl. rewrite update_eq.
+  omega.
+Qed.
+
 (** [] *)
 
 (* ####################################################### *)
@@ -809,7 +898,15 @@ Example hoare_asgn_example4 :
   {{fun st => True}} (X ::= (ANum 1);; Y ::= (ANum 2)) 
   {{fun st => st X = 1 /\ st Y = 2}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_seq.
+  apply hoare_asgn.
+  eapply hoare_consequence_pre.
+  apply hoare_asgn.
+  intros st HT.
+  unfold assn_sub.
+  auto.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (swap_exercise)  *)
@@ -820,14 +917,18 @@ Proof.
 *)
 
 Definition swap_program : com :=
-  (* FILL IN HERE *) admit.
+  Z ::= AId X;; X ::= AId Y;; Y ::= AId Z.
 
 Theorem swap_exercise :
   {{fun st => st X <= st Y}} 
   swap_program
   {{fun st => st Y <= st X}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold swap_program.
+  eapply hoare_seq. eapply hoare_seq.
+  apply hoare_asgn. apply hoare_asgn.
+Admitted.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (hoarestate1)  *)
