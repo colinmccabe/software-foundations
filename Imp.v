@@ -1,5 +1,7 @@
 (** * Imp: Simple Imperative Programs *)
 
+Require Import Omega.
+
 (** In this chapter, we begin a new direction that will continue for
     the rest of the course.  Up to now most of our attention has been
     focused on various aspects of Coq itself, while from now on we'll
