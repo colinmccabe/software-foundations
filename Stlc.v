@@ -387,15 +387,68 @@ where "'[' x ':=' s ']' t" := (subst x s t).
 Inductive substi (s:tm) (x:id) : tm -> tm -> Prop := 
   | s_var1 : 
       substi s x (tvar x) s
-  (* FILL IN HERE *)
-.
+  | s_var2 :
+      forall y,
+        x <> y ->
+        substi s x (tvar y) (tvar y)
+  | s_abs1 :
+      forall T t1,
+        substi s x (tabs x T t1) (tabs x T t1)
+  | s_abs2 :
+      forall y T t1,
+        x <> y ->
+        substi s x (tabs y T t1) (tabs y T ([x:=s] t1))
+  | s_app :
+      forall t1 t2,
+        substi s x (tapp t1 t2) (tapp ([x:=s] t1) ([x:=s] t2))
+  | s_true :
+      substi s x ttrue ttrue
+  | s_false :
+      substi s x tfalse tfalse
+  | s_if :
+      forall t1 t2 t3,
+        substi s x (tif t1 t2 t3) (tif ([x:=s] t1) ([x:=s] t2) ([x:=s] t3)).
+
 
 Hint Constructors substi.
 
 Theorem substi_correct : forall s x t t',
   [x:=s]t = t' <-> substi s x t t'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split; intros.
+  Case "->".
+    destruct t.
+
+    simpl in H.
+    destruct (eq_id_dec x0 i).
+      rewrite e. rewrite H. apply s_var1.
+      rewrite <- H. apply s_var2. assumption.
+
+    rewrite <- H. simpl. apply s_app.
+
+    simpl in H.
+    destruct (eq_id_dec x0 i).
+      rewrite <- H. rewrite <- e. apply s_abs1.
+      rewrite <- H. apply s_abs2. assumption.
+
+    rewrite <- H. simpl. apply s_true.
+
+    rewrite <- H. simpl. apply s_false.
+
+    rewrite <- H. simpl. apply s_if.
+
+  Case "<-".
+    inversion H.
+    simpl. rewrite eq_id. reflexivity.
+    simpl. apply neq_id. assumption.
+    simpl. rewrite eq_id. reflexivity.
+    simpl. rewrite neq_id. reflexivity. assumption.
+    reflexivity.
+    reflexivity.
+    reflexivity.
+    simpl. reflexivity.
+Qed.
+
 (** [] *)
 
 (* ################################### *)
@@ -582,7 +635,17 @@ Lemma step_example5 :
        (tapp (tapp idBBBB idBB) idB)
   ==>* idB.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* normalize. *)
+
+  eapply multi_step.
+    apply ST_App1.
+    apply ST_AppAbs. auto.
+    simpl.
+
+    eapply multi_step.
+      apply ST_AppAbs. auto.
+      simpl. apply multi_refl.
+Qed.
 
 (* FILL IN HERE *)
 (** [] *)
@@ -769,7 +832,19 @@ Example typing_example_3 :
                (tapp (tvar y) (tapp (tvar x) (tvar z)))))) \in
       T.
 Proof with auto.
-  (* FILL IN HERE *) Admitted.
+  exists (TArrow (TArrow TBool TBool)
+                 (TArrow (TArrow TBool TBool)
+                         (TArrow TBool TBool))).
+  apply T_Abs.
+  apply T_Abs.
+  apply T_Abs.
+  apply T_App with (T11 := TBool).
+    apply T_Var. reflexivity.
+    apply T_App with (T11 := TBool).
+      apply T_Var. reflexivity.
+      apply T_Var. reflexivity.
+Qed.
+
 (** [] *)
 
 (** We can also show that terms are _not_ typable.  For example, let's
