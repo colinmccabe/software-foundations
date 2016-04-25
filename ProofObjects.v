@@ -186,10 +186,14 @@ Print eight_is_beautiful'''.
 Theorem six_is_beautiful :
   beautiful 6.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply b_sum with (n := 3) (m := 3).
+    apply b_3.
+    apply b_3.
+Qed.
 
 Definition six_is_beautiful' : beautiful 6 :=
-  (* FILL IN HERE *) admit.
+  b_sum 3 3 b_3 b_3.
+
 (** [] *)
 
 (** **** Exercise: 1 star (nine_is_beautiful)  *)
@@ -198,10 +202,14 @@ Definition six_is_beautiful' : beautiful 6 :=
 Theorem nine_is_beautiful :
   beautiful 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply b_sum with (n := 6) (m := 3).
+    apply six_is_beautiful.
+    apply b_3.
+Qed.
 
 Definition nine_is_beautiful' : beautiful 9 :=
-  (* FILL IN HERE *) admit.
+  b_sum 6 3 six_is_beautiful' b_3.
+
 (** [] *)
 
 (* ##################################################### *)
@@ -292,7 +300,8 @@ Definition beatiful_plus3'' : Prop :=
 (** Give a proof object corresponding to the theorem [b_times2] from Prop.v *)
 
 Definition b_times2': forall n, beautiful n -> beautiful (2*n) :=
-  (* FILL IN HERE *) admit.
+    b_times2.
+
 (** [] *)
 
 
@@ -300,8 +309,10 @@ Definition b_times2': forall n, beautiful n -> beautiful (2*n) :=
 (** **** Exercise: 2 stars, optional (gorgeous_plus13_po)  *) 
 (** Give a proof object corresponding to the theorem [gorgeous_plus13] from Prop.v *)
 
-Definition gorgeous_plus13_po: forall n, gorgeous n -> gorgeous (13+n):=
-   (* FILL IN HERE *) admit.
+Definition gorgeous_plus13_po: forall n, gorgeous n -> gorgeous (13+n) :=
+  fun (n : nat) (H : gorgeous n) =>
+      g_plus5 (8+n) (g_plus5 (3+n) (g_plus3 n H)).
+
 (** [] *)
 
 
@@ -378,7 +389,14 @@ we get: *)
 (** Construct a proof object demonstrating the following proposition. *)
 
 Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
-  (* FILL IN HERE *) admit.
+  fun (P Q R : Prop) (HPQ : P /\ Q) (HQR : Q /\ R) =>
+    match HPQ with
+    | conj _ _ HP HQ =>
+        match HQR with
+        | conj _ _ HQ0 HR => conj P R HP HR
+        end
+    end.
+
 (** [] *)
 
 
@@ -426,7 +444,8 @@ Definition snie : some_nat_is_even :=
 (** Complete the definition of the following proof object: *)
 
 Definition p : ex _ (fun n => beautiful (S n)) :=
-(* FILL IN HERE *) admit.
+  ex_intro _ (fun n => beautiful (S n)) 2 b_3.
+
 (** [] *)
 
 
@@ -495,7 +514,10 @@ Example trans_eq_example' : forall (a b c d e f : nat),
      [c;d] = [e;f] ->
      [a;b] = [e;f].
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros a b c d e f.
+  apply trans_eq.
+Qed.
+
 (** [] *)
 
 
