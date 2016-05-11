@@ -300,7 +300,8 @@ Definition beatiful_plus3'' : Prop :=
 (** Give a proof object corresponding to the theorem [b_times2] from Prop.v *)
 
 Definition b_times2': forall n, beautiful n -> beautiful (2*n) :=
-    b_times2.
+  fun (n : nat) (H : beautiful n) =>
+    eq_ind_r (fun n0 => beautiful (n + n0)) (b_sum n n H H) (plus_0_r n).
 
 (** [] *)
 
@@ -419,7 +420,13 @@ Definition beautiful_iff_gorgeous :
 (** Try to write down an explicit proof object for [or_commut] (without
     using [Print] to peek at the ones we already defined!). *)
 
-(* FILL IN HERE *)
+Definition or_commut'' : forall (P Q : Prop), P \/ Q -> Q \/ P :=
+  fun (P Q : Prop) (HPQ : P \/ Q) =>
+    match HPQ with
+    | or_introl _ _ HP => or_intror Q P HP
+    | or_intror _ _ HQ => or_introl Q P HQ
+    end.
+
 (** [] *)
 
 (** Recall that we model an existential for a property as a pair consisting of 
@@ -444,7 +451,7 @@ Definition snie : some_nat_is_even :=
 (** Complete the definition of the following proof object: *)
 
 Definition p : ex _ (fun n => beautiful (S n)) :=
-  ex_intro _ (fun n => beautiful (S n)) 2 b_3.
+  ex_intro nat (fun n => beautiful (S n)) 2 b_3.
 
 (** [] *)
 
@@ -515,7 +522,7 @@ Example trans_eq_example' : forall (a b c d e f : nat),
      [a;b] = [e;f].
 Proof.
   intros a b c d e f.
-  apply trans_eq.
+  apply (trans_eq _ [a;b] [c;d] [e;f]).
 Qed.
 
 (** [] *)
