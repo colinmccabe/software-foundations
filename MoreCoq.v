@@ -287,8 +287,7 @@ Proof.
   intros.
   inversion H.
   inversion H0.
-  rewrite -> H2.
-  reflexivity.
+  symmetry. apply H2.
 Qed.
 
 (** [] *)

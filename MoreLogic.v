@@ -1,6 +1,6 @@
 (** * MoreLogic: More on Logic in Coq *)
 
-Require Export "Prop".
+Require Export Props.
 
 (* ############################################################ *)
 (** * Existential Quantification *)
@@ -99,7 +99,7 @@ Qed.
 ]] 
     mean? *)
 
-(* FILL IN HERE *)
+(* There exists a nat whose successor is beautiful *)
 
 (*
 *)
@@ -110,7 +110,13 @@ Qed.
 Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
   (forall x, P x) -> ~ (exists x, ~ P x).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros X P H.
+  unfold not. intros.
+  inversion H0 as [x H1].
+  apply H1 in H.
+  inversion H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (not_exists_dist)  *)
@@ -132,7 +138,18 @@ Proof.
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
   (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
 Proof.
-   (* FILL IN HERE *) Admitted.
+  intros.
+  split. intros.
+  inversion H as [x H0].
+  destruct H0 as [H1 | H2].
+  left. exists x. apply H1.
+  right. exists x. apply H2.
+  intros.
+  destruct H as [H | H].
+  inversion H as [x H0]. exists x. left. apply H0.
+  inversion H as [x H0]. exists x. right. apply H0.
+Qed.
+
 (** [] *)
 
 (* ###################################################### *)
@@ -235,7 +252,16 @@ Proof.
 Theorem override_shadow' : forall (X:Type) x1 x2 k1 k2 (f : nat->X),
   (override' (override' f k1 x2) k1 x1) k2 = (override' f k1 x1) k2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold override'.
+  destruct (eq_nat_dec k1 k2).
+  Case "k1 = k2".
+    reflexivity.
+  Case "k1 <> k2".
+    apply f_equal.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 
@@ -251,8 +277,8 @@ Proof.
     asserts that [P] is true for every element of the list [l]. *)
 
 Inductive all (X : Type) (P : X -> Prop) : list X -> Prop :=
-  (* FILL IN HERE *)
-.
+  | all_nil : all X P []
+  | all_cons : forall x l, P x -> all X P l -> all X P (x :: l).
 
 (** Recall the function [forallb], from the exercise
     [forall_exists_challenge] in chapter [Poly]: *)
@@ -270,8 +296,26 @@ Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
     Are there any important properties of the function [forallb] which
     are not captured by your specification? *)
 
-(* FILL IN HERE *)
-(** [] *)
+Theorem forallb_all : forall X test l,
+  all X (fun x => test x = true) l <-> forallb test l = true.
+Proof.
+  intros.
+  split.
+  Case "->".
+    intros. induction H.
+    reflexivity.
+    simpl. rewrite H. rewrite IHall. reflexivity.
+  Case "<-".
+    intros. induction l.
+    SCase "l = []".
+      apply all_nil.
+    SCase "l = cons".
+      apply all_cons.
+        apply andb_true_elim1 in H. assumption.
+        simpl in H. apply andb_true_elim2 in H. apply IHl in H. assumption.
+Qed.
+
+ (** [] *)
 
 (** **** Exercise: 4 stars, advanced (filter_challenge)  *)
 (** One of the main purposes of Coq is to prove that programs match
@@ -368,8 +412,11 @@ Proof.
     does not stutter.) *)
 
 Inductive nostutter:  list nat -> Prop :=
- (* FILL IN HERE *)
-.
+  | nostutter_nil : nostutter []
+  | nostutter_single : forall n, nostutter [n]
+  | nostutter_cons : forall n m l,
+      n <> m -> nostutter (m :: l) -> nostutter (n :: m :: l).
+
 
 (** Make sure each of these tests succeeds, but you are free
     to change the proof if the given one doesn't work for you.
@@ -384,32 +431,21 @@ Inductive nostutter:  list nat -> Prop :=
     tactics.  *)
 
 Example test_nostutter_1:      nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply beq_nat_false; auto. Qed.
-*)
 
 Example test_nostutter_2:  nostutter [].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply beq_nat_false; auto. Qed.
-*)
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply beq_nat_false; auto. Qed.
-*)
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. intro.
   repeat match goal with 
     h: nostutter _ |- _ => inversion h; clear h; subst 
   end.
   contradiction H1; auto. Qed.
-*)
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (pigeonhole principle)  *)
