@@ -193,7 +193,7 @@ Proof.
     solve by inversion 3.
   Case "Not a value".
     unfold not; intros.
-    inversion H; solve by inversion.
+    solve by inversion 2.
 Qed.
 
 (** [] *)
@@ -226,6 +226,20 @@ Proof.
 Theorem step_deterministic:
   deterministic step.
 Proof with eauto.
+  unfold deterministic. intros x y1 y2 H1 H2.
+  step_cases (induction H1) Case.
+    inversion H2; subst. reflexivity. solve by inversion.
+    inversion H2; subst. reflexivity. solve by inversion.
+    inversion H2; subst.
+      solve by inversion.
+      solve by inversion.
+      admit.
+    inversion H2; subst. admit.
+    inversion H2; subst.
+      auto.
+      inversion H0.
+    inversion H2; subst. reflexivity.
+    
   (* FILL IN HERE *) Admitted.
 (** [] *)
 
@@ -342,7 +356,7 @@ Example succ_hastype_nat__hastype_nat : forall t,
   |- tsucc t \in TNat ->
   |- t \in TNat.  
 Proof.
-  intros.
+  intros t H.
   inversion H. assumption.
 Qed.
 
@@ -419,11 +433,15 @@ Proof with auto.
   Case "T_Pred".
     inversion IHHT as [Ht1Value | Ht1Step].
     SCase "t1 is a value".
-      left.
+      right.
       apply (nat_canonical t1 HT) in Ht1Value.
-      unfold value. right.
       inversion Ht1Value.
-      admit. admit.
+      SSCase "t1 = tzero".
+        exists tzero.
+        apply ST_PredZero.
+      SSCase "t1 = tsucc".
+        exists t.
+        apply ST_PredSucc. assumption.
     SCase "t1 can take a step".
       right.
       inversion Ht1Step.
@@ -432,11 +450,14 @@ Proof with auto.
   Case "T_Iszero".
     inversion IHHT as [Ht1Value | Ht1Step].
     SCase "t1 is a value".
-      left.
-      unfold value. left.
+      right.
       apply (nat_canonical t1 HT) in Ht1Value.
       inversion Ht1Value.
-      admit. admit.
+      SSCase "t1 = tzero".
+        exists ttrue. apply ST_IszeroZero.
+      SSCase "t1 = tsucc".
+        exists tfalse.
+        apply ST_IszeroSucc. assumption.
     SCase "t1 can take a step".
       right.
       inversion Ht1Step.
@@ -480,14 +501,22 @@ Qed.
 
 (** **** Exercise: 1 star (step_review)  *)
 (** Quick review.  Answer _true_ or _false_.  In this language...
-      - Every well-typed normal form is a value. True
+      - Every well-typed normal form is a value.
 
-      - Every value is a normal form. True
+        True
+
+      - Every value is a normal form.
+
+        True
 
       - The single-step evaluation relation is
-        a partial function (i.e., it is deterministic). True
+        a partial function (i.e., it is deterministic).
 
-      - The single-step evaluation relation is a _total_ function. False
+        True
+
+      - The single-step evaluation relation is a _total_ function.
+
+        False
 
 *)
 (** [] *)
@@ -528,17 +557,23 @@ Proof with auto.
       SCase "ST_IfFalse". assumption.
       SCase "ST_If". apply T_If; try assumption.
         apply IHHT1; assumption.
-   Case "T_Succ". inversion HE; subst.
-     apply T_Succ. apply IHHT in H0. assumption.
-   Case "T_Pred". inversion HE; subst.
-     SCase "ST_PredZero". apply T_Zero.
-     SCase "ST_PredSucc". admit.
-     SCase "ST_Pred".
-       apply IHHT in H0.
-       apply T_Pred.
-       assumption.
-   Case "T_Iszero".
-Admitted.
+    Case "T_Succ". inversion HE; subst.
+      apply T_Succ. apply IHHT in H0. assumption.
+    Case "T_Pred". inversion HE; subst.
+      SCase "ST_PredZero". apply T_Zero.
+      SCase "ST_PredSucc".
+        inversion HT. assumption.
+      SCase "ST_Pred".
+        apply IHHT in H0.
+        apply T_Pred.
+        assumption.
+    Case "T_Iszero".
+      inversion HE.
+      apply T_True.
+      apply T_False.
+      apply T_Iszero. apply IHHT in H0. assumption.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_preservation_informal)  *)
@@ -584,7 +619,18 @@ Theorem preservation' : forall t t' T,
   t ==> t' ->
   |- t' \in T.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros t t' T Ht Hs.
+  step_cases (induction Hs) Case; inversion Ht; subst; auto.
+    Case "ST_If".
+      apply T_If. admit.
+      auto.
+      auto.
+    Case "ST_PredSucc".
+      inversion H1. auto.
+    Case "ST_Iszero".
+      apply T_Iszero. admit.
+Admitted.
+
 (** [] *)
 
 (* ###################################################################### *)
@@ -705,7 +751,8 @@ Theorem normalize_ex : exists e',
   (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state 
   ==>a* e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply ex_intro. normalize.
+Qed.
 
 (** [] *)
 
@@ -716,7 +763,9 @@ Theorem normalize_ex' : exists e',
   (AMult (ANum 3) (AMult (ANum 2) (ANum 1))) / empty_state 
   ==>a* e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (ANum 6). normalize.
+Qed.
+
 (** [] *)
 
 
@@ -730,9 +779,18 @@ Proof.
     and [|- t' \in T], then [|- t \in T]?  If so, prove it.  If
     not, give a counter-example.  (You do not need to prove your
     counter-example in Coq, but feel free to do so if you like.)
+ *)
+Example no_expansion: exists t t' T,
+  |- t' \in T ->
+  t ==> t' ->
+  ~(|- t \in T).
+Proof.
+  exists (tif ttrue tzero tfalse), tzero, TNat.
+  unfold not. intros.
+  solve by inversion 2.
+Qed.
 
-    (* FILL IN HERE *)
-[] *)
+(* [] *)
 
 
 
@@ -748,9 +806,15 @@ Proof.
    counterexample.
       - Determinism of [step]
 
+        Remains true.
+
       - Progress
 
+        Becomes false. [|- (tsucc ttrue) \in TBool] but it is stuck.
+
       - Preservation
+
+        Remains true.
 
 [] *)
 
@@ -770,6 +834,20 @@ Proof.
            (tif t1 t2 t3) ==> (tif t1 t2' t3)
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
+
+     - Determinism of [step]
+
+       Becomes false.
+       [tif ttrue (tiszero zero) tfalse ==> tif ttrue tfalse]
+       [tif ttrue (tiszero zero) tfalse ==> tiszero zero]
+
+     - Progress
+
+       Remains true.
+
+     - Preservation
+
+       Remains true.
 
 [] *)
 
@@ -818,7 +896,8 @@ Proof.
     achieve this simply by removing the rule from the definition of
     [step]?  Would doing so create any problems elsewhere? 
 
-(* FILL IN HERE *)
+    (* This would destroy progress. [tpred tzero] would be well-typed
+       but it would be stuck.  *)
 [] *)
 
 (** **** Exercise: 4 stars, advanced (prog_pres_bigstep)  *)

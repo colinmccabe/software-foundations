@@ -129,7 +129,10 @@ Qed.
 Theorem ev_double : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [| n'].
+  - simpl. apply ev_0.
+  - simpl. apply ev_SS. apply IHn'.
+Qed.
 (** [] *)
 
 (* ####################################################### *)
@@ -269,7 +272,7 @@ Abort.
 Theorem evSS_ev : forall n,
   ev (S (S n)) -> ev n.
 Proof.
-  intros n E.
+  intros n E. Print ev.
   inversion E as [| n' E'].
   (* We are in the [E = ev_SS n' E'] case now. *)
   apply E'.
@@ -289,12 +292,16 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n H.
+  inversion H as [|n' H1]. inversion H1. assumption.
+Qed.
 
 Theorem even5_nonsense :
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros H.
+  inversion H as [| n' H1]. inversion H1 as [| n'' H2]. inversion H2.
+Qed.
 (** [] *)
 
 (** The way we've used [inversion] here may seem a bit
@@ -418,7 +425,11 @@ Qed.
 (** **** Exercise: 2 stars (ev_sum)  *)
 Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m Hn Hm.
+  induction Hn.
+  - simpl. apply Hm.
+  - simpl. apply ev_SS. apply IHHn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (ev_alternate)  *)
@@ -436,7 +447,19 @@ Inductive ev' : nat -> Prop :=
 
 Theorem ev'_ev : forall n, ev' n <-> ev n.
 Proof.
- (* FILL IN HERE *) Admitted.
+  split; intros.
+  - induction H.
+    * apply ev_0.
+    * apply ev_SS. apply ev_0.
+    * apply ev_sum. assumption. assumption.
+  - induction H.
+    * apply ev'_0.
+    * assert (S (S n) = 2 + n) as Hss. { reflexivity. }
+      rewrite Hss.
+      apply ev'_sum.
+      + apply ev'_2.
+      + apply IHev.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, recommended (ev_ev__ev)  *)
@@ -445,8 +468,13 @@ Proof.
 
 Theorem ev_ev__ev : forall n m,
   ev (n+m) -> ev n -> ev m.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. Print ev_ind.
+  intros n m H Hn.
+  induction Hn.
+  - apply H.
+  - apply IHHn.
+    simpl in H. inversion H. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (ev_plus_plus)  *)
@@ -457,7 +485,7 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+Admitted.
 (** [] *)
 
 (* ####################################################### *)
@@ -485,7 +513,7 @@ Inductive le : nat -> nat -> Prop :=
   | le_n : forall n, le n n
   | le_S : forall n m, (le n m) -> (le n (S m)).
 
-Notation "m <= n" := (le m n).
+Notation "m <= n" := (le m n). Print le_ind.
 
 (** Proofs of facts about [<=] using the constructors [le_n] and
     [le_S] follow the same patterns as proofs about properties, like
@@ -545,14 +573,15 @@ Inductive next_even : nat -> nat -> Prop :=
 (** Define an inductive binary relation [total_relation] that holds
     between every pair of natural numbers. *)
 
-(* FILL IN HERE *)
+Inductive total_relation : nat -> nat -> Prop :=
+  | tot : forall (n m : nat), total_relation n n.
 (** [] *)
 
 (** **** Exercise: 2 stars (empty_relation)  *)
 (** Define an inductive binary relation [empty_relation] (on numbers)
     that never holds. *)
 
-(* FILL IN HERE *)
+Inductive empty_relation : nat -> nat -> Prop :=.  
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (le_exercises)  *)
@@ -560,68 +589,126 @@ Inductive next_even : nat -> nat -> Prop :=
     we are going to need later in the course.  The proofs make good
     practice exercises. *)
 
+Lemma Sn_le_m__n_le_m : forall n m, S n <= m -> n <= m.
+Proof.
+  intros. induction H.
+  - apply le_S. apply le_n.
+  -  apply le_S. assumption.
+Qed.    
+ 
 Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction H. Print le_ind.
+  - assumption.
+  - apply IHle. apply Sn_le_m__n_le_m in H0. assumption.
+Qed.
 
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  - apply le_n.
+  - apply le_S. apply IHn.
+Qed.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction H.
+  - apply le_n.
+  - apply le_S. apply IHle.
+Qed.
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H.
+  - apply le_n.
+  - apply Sn_le_m__n_le_m in H1. assumption.
+Qed.
 
 Theorem le_plus_l : forall a b,
   a <= a + b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros a b. induction a.
+  - simpl. apply O_le_n.
+  - simpl. apply n_le_m__Sn_le_Sm. assumption.
+Qed.
 
 Theorem plus_lt : forall n1 n2 m,
   n1 + n2 < m ->
   n1 < m /\ n2 < m.
 Proof.
- unfold lt.
- (* FILL IN HERE *) Admitted.
+  unfold lt. intros. split.
+  - induction n2.
+    * rewrite <- plus_n_O in H. assumption.
+    * rewrite <- plus_n_Sm in H.
+      apply Sn_le_m__n_le_m in H.
+      apply IHn2 in H.
+      assumption.
+  - induction n1.
+    * assumption.
+    * simpl in H.
+      apply Sn_le_m__n_le_m in H.
+      apply IHn1 in H.
+      assumption.
+Qed.
 
 Theorem lt_S : forall n m,
   n < m ->
   n < S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold lt. intros. apply le_S. assumption.
+Qed.
 
 Theorem leb_complete : forall n m,
   leb n m = true -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. generalize dependent m. induction n; intros.
+  - apply O_le_n.
+  - destruct m as [| m'].
+    * inversion H.
+    * simpl in H. apply n_le_m__Sn_le_Sm.
+      apply IHn. assumption.
+Qed.
 (** Hint: The next one may be easiest to prove by induction on [m]. *)
 
 Theorem leb_correct : forall n m,
   n <= m ->
   leb n m = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. generalize dependent m. induction n; intros.
+  - reflexivity.
+  - destruct m.
+    * inversion H.
+    * simpl. apply IHn. apply Sn_le_Sm__n_le_m in H. assumption.
+Qed.
 (** Hint: This theorem can easily be proved without using [induction]. *)
 
 Theorem leb_true_trans : forall n m o,
   leb n m = true -> leb m o = true -> leb n o = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  generalize dependent m. generalize dependent o.
+  induction n; intros.
+  - reflexivity.
+  - destruct m.
+    * inversion H.
+    * destruct o.
+      + inversion H0.
+      + simpl. simpl in H. simpl in H0.
+        apply IHn with (m := m).
+        assumption. assumption.
+Qed.
 
 (** **** Exercise: 2 stars, optional (leb_iff)  *)
 Theorem leb_iff : forall n m,
   leb n m = true <-> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - apply leb_complete.
+  - apply leb_correct.
+Qed.
 (** [] *)
 
 Module R.
@@ -639,18 +726,23 @@ Inductive R : nat -> nat -> nat -> Prop :=
    | c5 : forall m n o, R m n o -> R n m o.
 
 (** - Which of the following propositions are provable?
-      - [R 1 1 2]
-      - [R 2 2 6]
+      - [R 1 1 2] Yes, by applying c3, c2, and c1
+      - [R 2 2 6] No, because R is equivalent to addition and
+                  2 + 2 <> 6
 
     - If we dropped constructor [c5] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer.
 
+      No. R is equivalent to addiiton and addition is commutative.
+
     - If we dropped constructor [c4] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer.
 
-(* FILL IN HERE *)
+      Yes. Applying c4 'increments' the relation (e.g.
+      stepping from [R 1 1 2] to [R 2 2 4] and none of the other
+      constructors allows this.
 []
 *)
 
@@ -940,13 +1032,18 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros.
+  inversion H.
+Qed.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct H.
+  - apply MUnionL. apply H.
+  - apply MUnionR. apply H.
+Qed.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -957,18 +1054,49 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T ss re. induction ss.
+  - intros. simpl. apply MStar0.
+  - intros. simpl. apply MStarApp.
+    * apply H. simpl. left. reflexivity.
+    * apply IHss. intros. apply H. simpl. right. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars (reg_exp_of_list)  *)
 (** Prove that [reg_exp_of_list] satisfies the following
     specification: *)
 
+Lemma reg_exp_of_list_self : forall T (s1 : list T),
+                               s1 =~ reg_exp_of_list s1.
+Proof.
+  intros. induction s1.
+  - simpl. apply MEmpty.
+  - simpl.
+    assert (x :: s1 = [x] ++ s1) as HApp. reflexivity.
+    rewrite HApp.
+    apply MApp.
+    * apply MChar.
+    * apply IHs1.
+Qed.
 
 Lemma reg_exp_of_list_spec : forall T (s1 s2 : list T),
   s1 =~ reg_exp_of_list s2 <-> s1 = s2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split. generalize dependent s1.
+  - induction s2.
+    * intros. destruct s1.
+      + reflexivity.
+      + inversion H.
+    * destruct s1.
+      + intros. inversion H. inversion H3. rewrite <- H5 in H0. inversion H0.
+      + intros. inversion H. apply IHs2 in H4. admit.
+  - induction s2.
+    * intros. rewrite H. apply MEmpty.
+    * intros. simpl. rewrite H.
+      assert (x :: s2 = [x] ++ s2) as HApp. reflexivity.
+      rewrite HApp.
+      apply MApp. apply MChar. apply reg_exp_of_list_self.
+Admitted. 
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive
@@ -1344,7 +1472,14 @@ Qed.
 (** **** Exercise: 2 stars, recommended (reflect_iff)  *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct b.
+  - split; intros.
+    * reflexivity.
+    * inversion H. assumption.
+  - split; intros.
+    * inversion H. destruct H1. assumption.
+    * inversion H0.
+Qed.
 (** [] *)
 
 (** The advantage of [reflect] over the normal "if and only if"

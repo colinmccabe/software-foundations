@@ -452,7 +452,24 @@ Theorem WHILE_true: forall b c,
        (WHILE b DO c END)
        (WHILE BTrue DO SKIP END).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv. split; intros.
+  Case "->".
+    inversion H0; subst.
+    SCase "E_WhileEnd".
+      rewrite H in H5. inversion H5.
+    SCase "E_WhileLoop".
+      apply WHILE_true_nonterm with (c:=c) (st:=st) (st':=st') in H.
+      unfold not in H.
+      apply H in H0. inversion H0.
+  Case "<-".
+    inversion H0; subst.
+    SCase "E_WhileEnd".
+      inversion H5.
+      SCase "E_WhileLoop".
+      apply WHILE_true_nonterm with (c:=c) (st:=st) (st':=st') in H.
+      unfold not in H.
+Admitted.
+
 (** [] *)
 
 Theorem loop_unrolling: forall b c,
@@ -580,7 +597,17 @@ Theorem assign_aequiv : forall X e,
   aequiv (AId X) e -> 
   cequiv SKIP (X ::= e).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold aequiv. unfold cequiv. split; intros.
+  Case "->".
+    inversion H0; subst. simpl in H.
+    admit.
+  Case "<-".
+    inversion H0; subst.
+    replace (update st X (aeval st e)) with st.
+    constructor.
+    simpl in H. rewrite <- H.
+    apply functional_extensionality.
+Admitted.
 (** [] *)
 
 (* ####################################################### *)
@@ -781,7 +808,29 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
   bequiv b b' -> cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv (IFB b THEN c1 ELSE c2 FI) (IFB b' THEN c1' ELSE c2' FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv. split; intros.
+  Case "->".
+    inversion H2; subst; unfold bequiv in H.
+    SCase "b evaluates to true".
+      apply E_IfTrue.
+      rewrite <- H. assumption.
+      apply H0 in H9. assumption.
+    SCase "b evaluates to false".
+      apply E_IfFalse.
+      rewrite <- H. assumption.
+      apply H1 in H9. assumption.
+  Case "<-".
+    inversion H2; subst; unfold bequiv in H.
+    SCase "b evaluates to true".
+      apply E_IfTrue.
+      rewrite H. assumption.
+      apply H0 in H9. assumption.
+    SCase "b evaluates to false".
+      apply E_IfFalse. rewrite H.
+      assumption.
+      apply H1 in H9. assumption.
+Qed.
+
 (** [] *)
 
 (** *** *)
@@ -1159,7 +1208,25 @@ Proof.
       apply trans_cequiv with c2; try assumption.
       apply IFB_false; assumption.
   Case "WHILE".
-    (* FILL IN HERE *) Admitted.
+    assert (bequiv b (fold_constants_bexp b)).
+      apply fold_constants_bexp_sound.
+    destruct (fold_constants_bexp b).
+    SCase "bequiv b BTrue". apply WHILE_true. assumption.
+    SCase "bequiv b BFalse". apply WHILE_false. assumption.
+    SCase "bequiv b (BEq a a0)".
+      apply CWhile_congruence.
+      assumption. assumption.
+    SCase "bequiv b (BLe a a0)".
+      apply CWhile_congruence.
+      assumption. assumption.
+    SCase "bequiv b (BNot b0)".
+      apply CWhile_congruence.
+      assumption. assumption.
+    SCase "bequiv b (BAnd b0_1 b0_2)".
+      apply CWhile_congruence.
+      assumption. assumption.
+Qed.
+
 (** [] *)
 
 (* ########################################################## *)
